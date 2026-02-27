@@ -21,7 +21,12 @@ class MusicControls(discord.ui.View):
     async def get_player(self, interaction: discord.Interaction) -> wavelink.Player | None:
         if not interaction.guild:
             return None
-        return cast(wavelink.Player, interaction.guild.voice_client)
+
+        voice_client = interaction.guild.voice_client
+        if not isinstance(voice_client, wavelink.Player):
+            return None
+
+        return voice_client
 
     @discord.ui.button(label="⏸️/▶️", style=discord.ButtonStyle.blurple, custom_id="music_pause")
     async def pause_resume(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -29,10 +34,16 @@ class MusicControls(discord.ui.View):
         if not player:
             await interaction.response.send_message("No active player found.", ephemeral=True)
             return
+
+        if not interaction.user.voice or interaction.user.voice.channel != player.channel:
+            await interaction.response.send_message("You need to be in my voice channel to use this button.", ephemeral=True)
+            return
             
-        await interaction.response.defer()
+        await interaction.response.defer(ephemeral=True)
         try:
             await player.pause(not player.paused)
+            state = "Paused" if player.paused else "Resumed"
+            await interaction.followup.send(state, ephemeral=True)
         except Exception as e:
             await interaction.followup.send(f"Error toggling pause: {e}", ephemeral=True)
 
@@ -43,9 +54,13 @@ class MusicControls(discord.ui.View):
             await interaction.response.send_message("No active player found.", ephemeral=True)
             return
 
-        await interaction.response.defer()
+        if not interaction.user.voice or interaction.user.voice.channel != player.channel:
+            await interaction.response.send_message("You need to be in my voice channel to use this button.", ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True)
         try:
-            await player.skip(force=True)
+            await player.skip()
             await interaction.followup.send("Skipped!", ephemeral=True)
         except Exception as e:
             await interaction.followup.send(f"Error skipping: {e}", ephemeral=True)
@@ -57,7 +72,11 @@ class MusicControls(discord.ui.View):
             await interaction.response.send_message("No active player found.", ephemeral=True)
             return
 
-        await interaction.response.defer()
+        if not interaction.user.voice or interaction.user.voice.channel != player.channel:
+            await interaction.response.send_message("You need to be in my voice channel to use this button.", ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True)
         try:
             new_vol = min(player.volume + 10, 1000)
             await player.set_volume(new_vol)
@@ -72,7 +91,11 @@ class MusicControls(discord.ui.View):
             await interaction.response.send_message("No active player found.", ephemeral=True)
             return
 
-        await interaction.response.defer()
+        if not interaction.user.voice or interaction.user.voice.channel != player.channel:
+            await interaction.response.send_message("You need to be in my voice channel to use this button.", ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True)
         try:
             new_vol = max(player.volume - 10, 0)
             await player.set_volume(new_vol)
@@ -87,7 +110,11 @@ class MusicControls(discord.ui.View):
             await interaction.response.send_message("No active player found.", ephemeral=True)
             return
 
-        await interaction.response.defer()
+        if not interaction.user.voice or interaction.user.voice.channel != player.channel:
+            await interaction.response.send_message("You need to be in my voice channel to use this button.", ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True)
         try:
             filters: wavelink.Filters = player.filters
             if filters.equalizer.payload:
@@ -173,7 +200,7 @@ class Music(commands.Cog):
         await interaction.response.defer()
 
         player = cast(wavelink.Player, interaction.guild.voice_client)
-        if not player:
+        if not isinstance(player, wavelink.Player):
             try:
                 # Explicitly self_deaf=True as per best practices
                 player = await user_channel.connect(cls=wavelink.Player, self_deaf=True, self_mute=False)
@@ -201,9 +228,11 @@ class Music(commands.Cog):
         await player.queue.put_wait(track)
 
         if not player.playing:
-            await player.play(player.queue.get())
+            next_track = player.queue.get()
+            await player.play(next_track)
             # Fallback volume set
             await player.set_volume(100)
+            await player.pause(False)
 
         embed_config = self.config.get("embed", {})
         embed = discord.Embed(

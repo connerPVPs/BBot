@@ -1,0 +1,14 @@
+{
+    "announcement_channel_id": "1472475835796553901",
+    "role_rewards": {
+        "25": "1473286929469669428",
+        "50": "1473287063959765033",
+        "75": "1473287116707332108",
+        "100": "1473287191584313470"
+    },
+    "embed": {
+        "title": "Level Up!",
+        "description": "Congratulations {user}, you have reached level {level}!",
+        "color": 3447003
+    }
+}

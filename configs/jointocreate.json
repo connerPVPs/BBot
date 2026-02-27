@@ -1,0 +1,11 @@
+{
+    "trigger_channel_id": "1472475344245096478",
+    "max_channels": 7,
+    "user_limit": 25,
+    "channel_name_format": "{user}'s-VC",
+    "error_embed": {
+        "title": "Limit Reached",
+        "description": "Sorry, the maximum number of temporary voice channels (7) has been reached. Please try again later.",
+        "color": 3447003
+    }
+}

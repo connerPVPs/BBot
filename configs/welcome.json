@@ -1,0 +1,18 @@
+{
+    "channel_id": "1472475965140635783",
+    "auto_role_id": "1472473308459958376",
+    "banner_url": "https://media.discordapp.net/attachments/1472475436670914632/1472968232347631637/Whisk_cefca8a936d15baae97459e41eaf845eeg.png?ex=69a257d1&is=69a10651&hm=414823d2c379cc5cdd90985c747be49c44179ce2a451e9397ef16981c445b78c&=&format=webp&quality=lossless&width=842&height=481",
+    "embed": {
+        "title": "",
+        "description": "{mention} We are very glad to have you in our minecraft server!",
+        "color": 3447003,
+        "fields": [
+            {
+                "name": "**SERVER CONNECTIONS **",
+                "value": "**SERVER IP:** BRAMBLESMP.FUN\n**PORT:** 25565",
+                "inline": false
+            }
+        ],
+        "footer": "Have fun, and welcome to the BrambleSMP journey!"
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "staff_role_id": "1472473227644244161",
+    "transcript_channel_id": "1472475470585925763",
+    "categories": {
+        "general": "1472475208530264307",
+        "report": "1472475226896990301",
+        "appeal": "1472475241790836797"
+    },
+    "panel_embed": {
+        "title": "BrambleSMP | Tickets",
+        "description": "Hello Dear BrambleSMP player, Welcome to tickets,\n\nWe will provide you with any kind of support you need\n\n **TICKET CATEGORIES**\nChoose from the following ticket categories given below.\n\n**General Support**\nSelect this category if you require any help regarding the server or anything, we will always be there to assist you.\n\n**Bug/User Report**\nSelect this category if you need to report any player or bugs related to the server. you can also report any staff member if you think they broke any rule or committed any illegal act.\n\n**Punishment Appeal**\nSelect this category if you are appealing for any kinds of punishment like ban, mute etc. We suggest that you read the rules properly before appealing.\n\nDo not create tickets for fun as it might create unwanted disturbance, further ignorance will lead to severe punishment",
+        "color": 3447003,
+        "footer": "click on the drop-down menu for more info"
+    },
+    "ticket_embed": {
+        "title": "BrambleSMP | Ticket",
+        "description": "Welcome {user_mention}!\n\nPlease state your issue here. A staff member will be with you shortly.\n\n**Rules:**\n- Do not ping staff.\n- Be patient.\n- Follow server rules.",
+        "color": 3447003
+    }
+}

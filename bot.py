@@ -47,7 +47,7 @@ class BrambleBot(commands.Bot):
 
 bot = BrambleBot()
 
-def wait_for_lavalink(host='87.106.82.84', port=11289, timeout=60):
+def wait_for_lavalink(host='127.0.0.1', port=2333, timeout=60):
     """Wait for Lavalink server to accept connections."""
     start_time = time.time()
     print(f"Waiting for Lavalink on {host}:{port}...")

@@ -90,7 +90,11 @@ class MusicControls(discord.ui.View):
         await interaction.response.defer()
         try:
             filters: wavelink.Filters = player.filters
-            if filters.equalizer.payload:
+            # Simplified equalizer check for Wavelink 3.x
+            # We check if any band has a non-zero gain
+            is_boosted = any(band.get('gain', 0) > 0 for band in filters.equalizer.payload) if filters.equalizer.payload else False
+
+            if is_boosted:
                  filters.equalizer.reset()
                  await interaction.followup.send("Bass boost disabled.", ephemeral=True)
             else:
@@ -133,6 +137,10 @@ class Music(commands.Cog):
         except Exception as e:
             print(f"Failed to initiate Lavalink connection: {e}")
 
+        # Add persistent view
+        self.bot.add_view(MusicControls())
+        print("Registered persistent view for MusicControls")
+
     @commands.Cog.listener()
     async def on_wavelink_node_ready(self, payload: wavelink.NodeReadyEventPayload):
         print(f"Lavalink Node connected: {payload.node.identifier} | Resumed: {payload.resumed}")
@@ -154,6 +162,23 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_stuck(self, payload: wavelink.TrackStuckEventPayload):
         print(f"Track stuck: {payload.track.title}")
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+        if member.id == self.bot.user.id:
+            return
+
+        # Check if the bot is in a voice channel
+        voice_client: wavelink.Player = cast(wavelink.Player, member.guild.voice_client)
+        if not voice_client:
+            return
+
+        # If the channel the bot is in was left
+        if before.channel and before.channel.id == voice_client.channel.id:
+            # If the bot is the only one left in the channel
+            if len(before.channel.members) == 1:
+                await voice_client.disconnect()
+                print(f"Left empty voice channel in {member.guild.name}")
 
     @app_commands.command(name="music", description="Play music from YouTube or Spotify")
     @app_commands.describe(query="Name or URL of the song")
@@ -201,9 +226,7 @@ class Music(commands.Cog):
         await player.queue.put_wait(track)
 
         if not player.playing:
-            await player.play(player.queue.get())
-            # Fallback volume set
-            await player.set_volume(100)
+            await player.play(player.queue.get(), volume=100)
 
         embed_config = self.config.get("embed", {})
         embed = discord.Embed(

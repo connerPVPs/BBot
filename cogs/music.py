@@ -80,31 +80,6 @@ class MusicControls(discord.ui.View):
         except Exception as e:
             await interaction.followup.send(f"Error setting volume: {e}", ephemeral=True)
 
-    @discord.ui.button(label="🎸 Bass", style=discord.ButtonStyle.primary, custom_id="music_bass")
-    async def toggle_bass(self, interaction: discord.Interaction, button: discord.ui.Button):
-        player = await self.get_player(interaction)
-        if not player:
-            await interaction.response.send_message("No active player found.", ephemeral=True)
-            return
-
-        await interaction.response.defer()
-        try:
-            filters: wavelink.Filters = player.filters
-            # Simplified equalizer check for Wavelink 3.x
-            # We check if any band has a non-zero gain
-            is_boosted = any(band_data.get('gain', 0) > 0 for band_data in filters.equalizer.payload.values()) if filters.equalizer.payload else False
-
-            if is_boosted:
-                 filters.equalizer.reset()
-                 await interaction.followup.send("Bass boost disabled.", ephemeral=True)
-            else:
-                 filters.equalizer.set(bands=[{'band': 0, 'gain': 0.25}, {'band': 1, 'gain': 0.25}])
-                 await interaction.followup.send("Bass boost enabled.", ephemeral=True)
-
-            await player.set_filters(filters)
-        except Exception as e:
-            await interaction.followup.send(f"Error toggling bass: {e}", ephemeral=True)
-
     @discord.ui.button(label="⏹️", style=discord.ButtonStyle.danger, custom_id="music_stop")
     async def stop(self, interaction: discord.Interaction, button: discord.ui.Button):
         player = await self.get_player(interaction)
@@ -125,6 +100,7 @@ class Music(commands.Cog):
         self.bot = bot
         self.config_manager = ConfigManager()
         self.config = self.config_manager.load_config("music.json")
+        self.now_playing_msg: dict[int, discord.Message] = {}
 
     async def cog_load(self):
         lavalink_conf = self.config.get("lavalink", {})
@@ -166,6 +142,38 @@ class Music(commands.Cog):
         # Force volume set on start to ensure audio is heard
         await payload.player.set_volume(100)
 
+        guild_id = payload.player.guild.id
+        track = payload.track
+
+        embed_config = self.config.get("embed", {})
+        embed = discord.Embed(
+            title=embed_config.get("title", "Now Playing"),
+            description=f"[{track.title}]({track.uri}) by {track.author}",
+            color=discord.Color(embed_config.get("color", discord.Color.blue().value))
+        )
+        if track.artwork:
+            embed.set_thumbnail(url=track.artwork)
+
+        view = MusicControls()
+
+        # Try to update the old message
+        old_msg = self.now_playing_msg.get(guild_id)
+        if old_msg:
+            try:
+                await old_msg.edit(embed=embed, view=view)
+                return
+            except discord.HTTPException:
+                # If editing fails (e.g., message deleted), send a new one
+                pass
+
+        # If no old message or editing failed, send a new one
+        # Note: we need the context or channel to send the message.
+        # We'll store the home channel in the player for this purpose.
+        channel = getattr(payload.player, "home_channel", None)
+        if channel:
+            new_msg = await channel.send(embed=embed, view=view)
+            self.now_playing_msg[guild_id] = new_msg
+
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackEndEventPayload):
         print(f"Track ended: {payload.track.title} - Reason: {payload.reason}")
@@ -197,6 +205,8 @@ class Music(commands.Cog):
             if len(before.channel.members) == 1:
                 await voice_client.disconnect()
                 print(f"Left empty voice channel in {member.guild.name}")
+                # Clear tracking message
+                self.now_playing_msg.pop(member.guild.id, None)
 
     @app_commands.command(name="play", description="Play music from YouTube or Spotify")
     @app_commands.describe(query="Name or URL of the song")
@@ -243,20 +253,14 @@ class Music(commands.Cog):
         track: wavelink.Playable = tracks[0]
         await player.queue.put_wait(track)
 
+        # Store interaction channel to send now playing updates later
+        player.home_channel = interaction.channel
+
         if not player.playing:
             await player.play(player.queue.get(), volume=100)
-
-        embed_config = self.config.get("embed", {})
-        embed = discord.Embed(
-            title=embed_config.get("title", "Now Playing"),
-            description=f"[{track.title}]({track.uri}) by {track.author}",
-            color=discord.Color(embed_config.get("color", discord.Color.blue().value))
-        )
-        if track.artwork:
-            embed.set_thumbnail(url=track.artwork)
-
-        # Do not pass player to view, it will fetch it dynamically
-        await interaction.followup.send(embed=embed, view=MusicControls())
+            await interaction.followup.send(f"Now playing: {track.title}", ephemeral=True)
+        else:
+            await interaction.followup.send(f"Added to queue: {track.title}")
 
     @app_commands.command(name="join", description="Join your voice channel")
     async def join_vc(self, interaction: discord.Interaction):
@@ -282,6 +286,7 @@ class Music(commands.Cog):
              return await interaction.response.send_message("Not in a voice channel!", ephemeral=True)
 
         await player.disconnect()
+        self.now_playing_msg.pop(interaction.guild.id, None)
         await interaction.response.send_message("Disconnected!")
 
     @app_commands.command(name="pause", description="Pause the current song")

@@ -92,7 +92,7 @@ class MusicControls(discord.ui.View):
             filters: wavelink.Filters = player.filters
             # Simplified equalizer check for Wavelink 3.x
             # We check if any band has a non-zero gain
-            is_boosted = any(band.get('gain', 0) > 0 for band in filters.equalizer.payload) if filters.equalizer.payload else False
+            is_boosted = any(band_data.get('gain', 0) > 0 for band_data in filters.equalizer.payload.values()) if filters.equalizer.payload else False
 
             if is_boosted:
                  filters.equalizer.reset()

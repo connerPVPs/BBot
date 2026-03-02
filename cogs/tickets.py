@@ -82,7 +82,7 @@ class TicketLauncher(discord.ui.View):
         custom_id="ticket_launcher_select"
     )
     async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
-        config = self.config_manager.load_config("tickets.json")
+        config = self.config_manager.load_config("tickets.json", guild_id=interaction.guild.id)
         categories = config.get("categories", {})
 
         category_id = None
@@ -108,7 +108,7 @@ class TicketControls(discord.ui.View):
     async def close_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
 
-        config = self.config_manager.load_config("tickets.json")
+        config = self.config_manager.load_config("tickets.json", guild_id=interaction.guild.id)
         transcript_channel_id = config.get("transcript_channel_id")
 
         transcript_channel = None
@@ -147,7 +147,7 @@ class Tickets(commands.Cog):
     @app_commands.describe(channel="The channel to send the ticket panel to")
     @app_commands.default_permissions(administrator=True)
     async def setup_tickets(self, interaction: discord.Interaction, channel: discord.TextChannel):
-        config = self.config_manager.load_config("tickets.json")
+        config = self.config_manager.load_config("tickets.json", guild_id=interaction.guild.id)
         embed_config = config.get("panel_embed", {})
 
         embed = discord.Embed(

@@ -94,7 +94,7 @@ class Leveling(commands.Cog):
         self.save_data()
 
     async def handle_level_up(self, member, new_level):
-        config = self.config_manager.load_config("leveling.json")
+        config = self.config_manager.load_config("leveling.json", guild_id=member.guild.id)
 
         # Announcement every 5 levels
         if new_level % 5 == 0:

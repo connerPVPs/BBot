@@ -42,8 +42,8 @@ class Status(commands.Cog):
                     return await response.json()
                 return None
 
-    def create_status_embed(self, ip, data):
-        config = self.config_manager.load_config("status.json")
+    def create_status_embed(self, ip, data, guild_id=None):
+        config = self.config_manager.load_config("status.json", guild_id=guild_id)
         embed_config = config.get("embed", {})
 
         embed = discord.Embed(
@@ -97,13 +97,14 @@ class Status(commands.Cog):
             await interaction.followup.send("Failed to fetch server data. Check the IP and try again.", ephemeral=True)
             return
 
-        embed = self.create_status_embed(server_ip, data)
+        embed = self.create_status_embed(server_ip, data, guild_id=interaction.guild.id)
 
         try:
             message = await channel.send(embed=embed)
 
             # Track message
             self.status_messages.append({
+                "guild_id": interaction.guild.id,
                 "channel_id": channel.id,
                 "message_id": message.id,
                 "server_ip": server_ip
@@ -119,6 +120,7 @@ class Status(commands.Cog):
         messages_to_remove = []
 
         for entry in self.status_messages:
+            guild_id = entry.get("guild_id")
             channel_id = entry["channel_id"]
             message_id = entry["message_id"]
             server_ip = entry["server_ip"]
@@ -133,7 +135,7 @@ class Status(commands.Cog):
                 data = await self.fetch_server_data(server_ip)
 
                 if data:
-                    embed = self.create_status_embed(server_ip, data)
+                    embed = self.create_status_embed(server_ip, data, guild_id=guild_id)
                     await message.edit(embed=embed)
                 else:
                     # Could not fetch data, maybe API down, skip edit

@@ -12,13 +12,14 @@ class Welcome(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        # Reload config to support dynamic updates
-        self.config = self.config_manager.load_config("welcome.json")
+        # Reload config to support dynamic updates per guild
+        guild_id = member.guild.id
+        config = self.config_manager.load_config("welcome.json", guild_id=guild_id)
 
-        auto_role_id = self.config.get("auto_role_id")
-        welcome_channel_id = self.config.get("channel_id")
-        banner_url = self.config.get("banner_url")
-        embed_config = self.config.get("embed", {})
+        auto_role_id = config.get("auto_role_id")
+        welcome_channel_id = config.get("channel_id")
+        banner_url = config.get("banner_url")
+        embed_config = config.get("embed", {})
 
         # Assign Auto Role
         if auto_role_id:

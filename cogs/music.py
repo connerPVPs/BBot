@@ -144,8 +144,9 @@ class Music(commands.Cog):
 
         guild_id = payload.player.guild.id
         track = payload.track
+        config = self.config_manager.load_config("music.json", guild_id=guild_id)
 
-        embed_config = self.config.get("embed", {})
+        embed_config = config.get("embed", {})
         embed = discord.Embed(
             title=embed_config.get("title", "Now Playing"),
             description=f"[{track.title}]({track.uri}) by {track.author}",
@@ -211,7 +212,8 @@ class Music(commands.Cog):
     @app_commands.command(name="play", description="Play music from YouTube or Spotify")
     @app_commands.describe(query="Name or URL of the song")
     async def play_music(self, interaction: discord.Interaction, query: str):
-        allowed_channel_id = self.config.get("voice_channel_id")
+        config = self.config_manager.load_config("music.json", guild_id=interaction.guild.id)
+        allowed_channel_id = config.get("voice_channel_id")
 
         if not interaction.user.voice:
             await interaction.response.send_message("You must be in a voice channel!", ephemeral=True)

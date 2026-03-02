@@ -105,6 +105,21 @@ class MusicControls(discord.ui.View):
         except Exception as e:
             await interaction.followup.send(f"Error toggling bass: {e}", ephemeral=True)
 
+    @discord.ui.button(label="⏹️", style=discord.ButtonStyle.danger, custom_id="music_stop")
+    async def stop(self, interaction: discord.Interaction, button: discord.ui.Button):
+        player = await self.get_player(interaction)
+        if not player:
+            await interaction.response.send_message("No active player found.", ephemeral=True)
+            return
+
+        await interaction.response.defer()
+        try:
+            await player.stop()
+            player.queue.clear()
+            await interaction.followup.send("Stopped and queue cleared!", ephemeral=True)
+        except Exception as e:
+            await interaction.followup.send(f"Error stopping: {e}", ephemeral=True)
+
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -154,6 +169,9 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackEndEventPayload):
         print(f"Track ended: {payload.track.title} - Reason: {payload.reason}")
+        if not payload.player.queue.is_empty:
+            next_track = payload.player.queue.get()
+            await payload.player.play(next_track)
 
     @commands.Cog.listener()
     async def on_wavelink_track_exception(self, payload: wavelink.TrackExceptionEventPayload):
@@ -180,7 +198,7 @@ class Music(commands.Cog):
                 await voice_client.disconnect()
                 print(f"Left empty voice channel in {member.guild.name}")
 
-    @app_commands.command(name="music", description="Play music from YouTube or Spotify")
+    @app_commands.command(name="play", description="Play music from YouTube or Spotify")
     @app_commands.describe(query="Name or URL of the song")
     async def play_music(self, interaction: discord.Interaction, query: str):
         allowed_channel_id = self.config.get("voice_channel_id")
@@ -239,6 +257,81 @@ class Music(commands.Cog):
 
         # Do not pass player to view, it will fetch it dynamically
         await interaction.followup.send(embed=embed, view=MusicControls())
+
+    @app_commands.command(name="join", description="Join your voice channel")
+    async def join_vc(self, interaction: discord.Interaction):
+        if not interaction.user.voice:
+             return await interaction.response.send_message("You must be in a voice channel!", ephemeral=True)
+
+        channel = interaction.user.voice.channel
+        player = cast(wavelink.Player, interaction.guild.voice_client)
+
+        if player:
+            if player.channel.id == channel.id:
+                 return await interaction.response.send_message("Already in your channel!", ephemeral=True)
+            await player.move_to(channel)
+            return await interaction.response.send_message(f"Moved to {channel.name}")
+
+        await channel.connect(cls=wavelink.Player, self_deaf=True)
+        await interaction.response.send_message(f"Joined {channel.name}")
+
+    @app_commands.command(name="leave", description="Disconnect from voice channel")
+    async def leave_vc(self, interaction: discord.Interaction):
+        player = cast(wavelink.Player, interaction.guild.voice_client)
+        if not player:
+             return await interaction.response.send_message("Not in a voice channel!", ephemeral=True)
+
+        await player.disconnect()
+        await interaction.response.send_message("Disconnected!")
+
+    @app_commands.command(name="pause", description="Pause the current song")
+    async def pause_song(self, interaction: discord.Interaction):
+        player = cast(wavelink.Player, interaction.guild.voice_client)
+        if not player or not player.playing:
+             return await interaction.response.send_message("Nothing is playing!", ephemeral=True)
+
+        await player.pause(True)
+        await interaction.response.send_message("Paused!")
+
+    @app_commands.command(name="resume", description="Resume the current song")
+    async def resume_song(self, interaction: discord.Interaction):
+        player = cast(wavelink.Player, interaction.guild.voice_client)
+        if not player or not player.paused:
+             return await interaction.response.send_message("Not paused!", ephemeral=True)
+
+        await player.pause(False)
+        await interaction.response.send_message("Resumed!")
+
+    @app_commands.command(name="skip", description="Skip the current song")
+    async def skip_song(self, interaction: discord.Interaction):
+        player = cast(wavelink.Player, interaction.guild.voice_client)
+        if not player or not player.playing:
+             return await interaction.response.send_message("Nothing is playing!", ephemeral=True)
+
+        await player.skip(force=True)
+        await interaction.response.send_message("Skipped!")
+
+    @app_commands.command(name="stop", description="Stop music and clear queue")
+    async def stop_music(self, interaction: discord.Interaction):
+        player = cast(wavelink.Player, interaction.guild.voice_client)
+        if not player:
+             return await interaction.response.send_message("Not in a voice channel!", ephemeral=True)
+
+        await player.stop()
+        player.queue.clear()
+        await interaction.response.send_message("Stopped and queue cleared!")
+
+    @app_commands.command(name="queue", description="Show the current queue")
+    async def show_queue(self, interaction: discord.Interaction):
+        player = cast(wavelink.Player, interaction.guild.voice_client)
+        if not player:
+             return await interaction.response.send_message("Not in a voice channel!", ephemeral=True)
+
+        if player.queue.is_empty:
+             return await interaction.response.send_message("Queue is empty.")
+
+        queue_list = "\n".join([f"{i+1}. {track.title}" for i, track in enumerate(player.queue)])
+        await interaction.response.send_message(f"**Current Queue:**\n{queue_list}")
 
 async def setup(bot):
     await bot.add_cog(Music(bot))

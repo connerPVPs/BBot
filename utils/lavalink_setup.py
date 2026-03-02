@@ -95,6 +95,11 @@ def download_jre():
 
 def setup_lavalink():
     """Ensure Lavalink is installed and configured. Returns the java executable path."""
+    # Ensure logs directory exists for Lavalink
+    logs_dir = os.path.join(LAVALINK_DIR, "logs")
+    if not os.path.exists(logs_dir):
+        os.makedirs(logs_dir)
+
     if not os.path.exists(LAVALINK_DIR):
         os.makedirs(LAVALINK_DIR)
 

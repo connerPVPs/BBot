@@ -85,7 +85,7 @@ if __name__ == "__main__":
                 )
                 
                 # Check if Lavalink starts successfully
-                if wait_for_lavalink():
+                if wait_for_lavalink(timeout=120):
                     try:
                         bot.run(TOKEN)
                     except Exception as e:

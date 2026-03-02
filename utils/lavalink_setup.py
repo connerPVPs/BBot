@@ -118,7 +118,7 @@ def setup_lavalink():
   address: 0.0.0.0
 lavalink:
   plugins:
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.11.1"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.0"
       repository: "https://maven.lavalink.dev/releases"
       snapshot: false
   server:
@@ -150,7 +150,7 @@ lavalink:
         - MUSIC
         - ANDROID_TESTSUITE
         - WEB
-        - TVHTML5EMBEDDED
+        - TVHTML5_SIMPLY
       # pot: "..." # Enable this if using PoToken
       # visitorData: "..." # Enable this if using Visitor Data
 

@@ -72,6 +72,11 @@ class Setup(commands.Cog):
             msg = await self.bot.wait_for('message', check=check, timeout=60)
             banner_url = msg.content if msg.content.lower() != 'none' else None
 
+            # 6. Thumbnail URL
+            await interaction.channel.send("Provide a direct link to the welcome thumbnail image (or type 'user' for user avatar, 'none' for none)")
+            msg = await self.bot.wait_for('message', check=check, timeout=60)
+            thumbnail_url = msg.content
+
             # Save Config
             config = self.config_manager.load_config("welcome.json", guild_id=interaction.guild.id)
             config.update({
@@ -82,7 +87,8 @@ class Setup(commands.Cog):
             })
             config["embed"].update({
                 "title": title,
-                "description": description
+                "description": description,
+                "thumbnail_url": thumbnail_url
             })
 
             self.config_manager.save_config("welcome.json", config, guild_id=interaction.guild.id)
@@ -113,16 +119,29 @@ class Setup(commands.Cog):
             msg = await self.bot.wait_for('message', check=check, timeout=60)
             transcript_channel_id = msg.channel_mentions[0].id if msg.channel_mentions else None
 
+            # 4. Panel Embed
+            await interaction.channel.send("What should be the title of the ticket panel?")
+            msg = await self.bot.wait_for('message', check=check, timeout=60)
+            panel_title = msg.content
+
+            await interaction.channel.send("What should be the description of the ticket panel?")
+            msg = await self.bot.wait_for('message', check=check, timeout=60)
+            panel_description = msg.content
+
             # Save Config
             config = self.config_manager.load_config("tickets.json", guild_id=interaction.guild.id)
             config.update({
                 "categories": {"general": category_id, "report": category_id, "appeal": category_id},
                 "staff_role_id": str(staff_role_id) if staff_role_id else None,
-                "transcript_channel_id": str(transcript_channel_id) if transcript_channel_id else None
+                "transcript_channel_id": str(transcript_channel_id) if transcript_channel_id else None,
+                "panel_embed": {
+                    "title": panel_title,
+                    "description": panel_description
+                }
             })
 
             self.config_manager.save_config("tickets.json", config, guild_id=interaction.guild.id)
-            await interaction.channel.send("Ticket setup complete!")
+            await interaction.channel.send("Ticket setup complete! Use /setup_tickets to send the panel.")
 
         except asyncio.TimeoutError:
             await interaction.channel.send("Setup timed out.")

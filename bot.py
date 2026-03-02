@@ -7,6 +7,7 @@ import sys
 from discord.ext import commands
 from dotenv import load_dotenv
 from cogs.tickets import TicketLauncher, TicketControls
+from cogs.music import MusicControls
 from utils.lavalink_setup import setup_lavalink
 
 # Load environment variables
@@ -33,7 +34,8 @@ class BrambleBot(commands.Bot):
         # Add persistent views
         self.add_view(TicketLauncher())
         self.add_view(TicketControls())
-        print("Registered persistent views for Tickets")
+        self.add_view(MusicControls())
+        print("Registered persistent views for Tickets and Music")
 
         # Sync application commands
         try:

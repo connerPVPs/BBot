@@ -50,11 +50,15 @@ class Welcome(commands.Cog):
             timestamp=datetime.now(timezone.utc)
         )
 
-        # Set user avatar as thumbnail (Right Side Top)
-        if member.avatar:
+        # Set user avatar or custom thumbnail
+        thumbnail_url = embed_config.get("thumbnail_url")
+        if thumbnail_url and thumbnail_url.lower() != 'none':
+            if thumbnail_url.lower() == 'user':
+                 embed.set_thumbnail(url=member.display_avatar.url)
+            else:
+                 embed.set_thumbnail(url=thumbnail_url)
+        elif member.avatar:
             embed.set_thumbnail(url=member.avatar.url)
-        elif member.display_avatar:
-             embed.set_thumbnail(url=member.display_avatar.url)
 
         # Set custom banner as image (Bottom)
         if banner_url:

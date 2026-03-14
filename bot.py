@@ -7,6 +7,7 @@ import sys
 from discord.ext import commands
 from dotenv import load_dotenv
 from cogs.tickets import TicketLauncher, TicketControls
+from cogs.music import MusicControls
 from utils.lavalink_setup import setup_lavalink
 
 # Load environment variables
@@ -33,7 +34,8 @@ class BrambleBot(commands.Bot):
         # Add persistent views
         self.add_view(TicketLauncher())
         self.add_view(TicketControls())
-        print("Registered persistent views for Tickets")
+        self.add_view(MusicControls())
+        print("Registered persistent views for Tickets and Music")
 
         # Sync application commands
         try:
@@ -47,7 +49,7 @@ class BrambleBot(commands.Bot):
 
 bot = BrambleBot()
 
-def wait_for_lavalink(host='87.106.82.84', port=11289, timeout=60):
+def wait_for_lavalink(host='127.0.0.1', port=2333, timeout=60):
     """Wait for Lavalink server to accept connections."""
     start_time = time.time()
     print(f"Waiting for Lavalink on {host}:{port}...")
@@ -85,7 +87,7 @@ if __name__ == "__main__":
                 )
                 
                 # Check if Lavalink starts successfully
-                if wait_for_lavalink():
+                if wait_for_lavalink(timeout=120):
                     try:
                         bot.run(TOKEN)
                     except Exception as e:

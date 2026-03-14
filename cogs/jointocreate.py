@@ -43,7 +43,8 @@ class JoinToCreate(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
-        config = self.config_manager.load_config("jointocreate.json")
+        guild_id = member.guild.id
+        config = self.config_manager.load_config("jointocreate.json", guild_id=guild_id)
         trigger_id_str = config.get("trigger_channel_id")
 
         if not trigger_id_str:

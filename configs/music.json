@@ -1,8 +1,8 @@
 {
     "voice_channel_id": "1472475356949643318",
     "lavalink": {
-        "host": "87.106.82.84",
-        "port": 11289,
+        "host": "127.0.0.1",
+        "port": 2333,
         "password": "youshallnotpass",
         "secure": false
     },

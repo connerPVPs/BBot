@@ -12,13 +12,14 @@ class Welcome(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        # Reload config to support dynamic updates
-        self.config = self.config_manager.load_config("welcome.json")
+        # Reload config to support dynamic updates per guild
+        guild_id = member.guild.id
+        config = self.config_manager.load_config("welcome.json", guild_id=guild_id)
 
-        auto_role_id = self.config.get("auto_role_id")
-        welcome_channel_id = self.config.get("channel_id")
-        banner_url = self.config.get("banner_url")
-        embed_config = self.config.get("embed", {})
+        auto_role_id = config.get("auto_role_id")
+        welcome_channel_id = config.get("channel_id")
+        banner_url = config.get("banner_url")
+        embed_config = config.get("embed", {})
 
         # Assign Auto Role
         if auto_role_id:
@@ -49,11 +50,15 @@ class Welcome(commands.Cog):
             timestamp=datetime.now(timezone.utc)
         )
 
-        # Set user avatar as thumbnail (Right Side Top)
-        if member.avatar:
+        # Set user avatar or custom thumbnail
+        thumbnail_url = embed_config.get("thumbnail_url")
+        if thumbnail_url and thumbnail_url.lower() != 'none':
+            if thumbnail_url.lower() == 'user':
+                 embed.set_thumbnail(url=member.display_avatar.url)
+            else:
+                 embed.set_thumbnail(url=thumbnail_url)
+        elif member.avatar:
             embed.set_thumbnail(url=member.avatar.url)
-        elif member.display_avatar:
-             embed.set_thumbnail(url=member.display_avatar.url)
 
         # Set custom banner as image (Bottom)
         if banner_url:

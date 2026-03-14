@@ -94,7 +94,7 @@ class Leveling(commands.Cog):
         self.save_data()
 
     async def handle_level_up(self, member, new_level):
-        config = self.config_manager.load_config("leveling.json")
+        config = self.config_manager.load_config("leveling.json", guild_id=member.guild.id)
 
         # Announcement every 5 levels
         if new_level % 5 == 0:
@@ -130,8 +130,8 @@ class Leveling(commands.Cog):
         user_id = str(member.id)
 
         data = self.users.get(user_id, {"xp": 0, "level": 0})
-        xp = data["xp"]
-        level = data["level"]
+        xp = data.get("xp", 0)
+        level = data.get("level", 0)
 
         # Calculate XP needed for next level
         # Total XP for Level L = 10L^2 + 90L
@@ -149,8 +149,54 @@ class Leveling(commands.Cog):
         embed.add_field(name="Total XP", value=str(xp), inline=True)
         embed.add_field(name="Progress", value=f"{xp_progress}/{xp_needed} XP to Level {level+1}", inline=False)
 
-        if member.avatar:
-            embed.set_thumbnail(url=member.avatar.url)
+        if member.display_avatar:
+            embed.set_thumbnail(url=member.display_avatar.url)
+
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="leaderboard", description="Show the top 50 users by XP")
+    async def leaderboard(self, interaction: discord.Interaction):
+        # Sort users by XP descending
+        sorted_users = sorted(self.users.items(), key=lambda x: x[1].get('xp', 0), reverse=True)
+        top_50 = sorted_users[:50]
+
+        if not top_50:
+             return await interaction.response.send_message("Leaderboard is empty.")
+
+        embed = discord.Embed(
+            title="Leaderboard - Top 50 Users",
+            color=discord.Color.gold()
+        )
+
+        description_lines = []
+        for i, (user_id, data) in enumerate(top_50):
+            user_xp = data.get('xp', 0)
+            user_level = data.get('level', 0)
+
+            # Use guild.get_member or fetch_member for user mentions/names
+            member = interaction.guild.get_member(int(user_id))
+            if member:
+                 user_info = f"**#{i+1}** {member.mention} - Level {user_level} ({user_xp} XP)"
+            else:
+                 user_info = f"**#{i+1}** User ID: {user_id} - Level {user_level} ({user_xp} XP)"
+
+            description_lines.append(user_info)
+
+        # Discord embeds have a 4096 character limit for descriptions.
+        # 50 users might exceed this, so let's paginate or truncate if necessary.
+        # For simplicity, we'll join them and hope for the best, or slice to fit.
+        full_description = "\n".join(description_lines)
+        if len(full_description) > 4000:
+             full_description = full_description[:3997] + "..."
+
+        embed.description = full_description
+
+        # Optionally show the first user's avatar
+        if top_50:
+             top_user_id = int(top_50[0][0])
+             top_member = interaction.guild.get_member(top_user_id)
+             if top_member and top_member.display_avatar:
+                  embed.set_thumbnail(url=top_member.display_avatar.url)
 
         await interaction.response.send_message(embed=embed)
 

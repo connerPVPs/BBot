@@ -95,6 +95,11 @@ def download_jre():
 
 def setup_lavalink():
     """Ensure Lavalink is installed and configured. Returns the java executable path."""
+    # Ensure logs directory exists for Lavalink
+    logs_dir = os.path.join(LAVALINK_DIR, "logs")
+    if not os.path.exists(logs_dir):
+        os.makedirs(logs_dir)
+
     if not os.path.exists(LAVALINK_DIR):
         os.makedirs(LAVALINK_DIR)
 
@@ -118,7 +123,7 @@ def setup_lavalink():
   address: 0.0.0.0
 lavalink:
   plugins:
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.11.1"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.0"
       repository: "https://maven.lavalink.dev/releases"
       snapshot: false
   server:
@@ -150,7 +155,7 @@ lavalink:
         - MUSIC
         - ANDROID_TESTSUITE
         - WEB
-        - TVHTML5EMBEDDED
+        - TVHTML5_SIMPLY
       # pot: "..." # Enable this if using PoToken
       # visitorData: "..." # Enable this if using Visitor Data
 
